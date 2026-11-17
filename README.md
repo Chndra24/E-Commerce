@@ -52,6 +52,8 @@ Supabase's direct host (`db.<ref>.supabase.co`) resolves to IPv6 only. Use the p
 
 Prisma 7 reads its datasource URL from [`prisma.config.ts`](prisma.config.ts), not from `schema.prisma`. Migrations use `DIRECT_URL`; the runtime client (`src/lib/db.ts`) uses `DATABASE_URL` through the `pg` driver adapter.
 
+The Prisma client initializes lazily on the first query, so `npm run build` does not need a database connection or `DATABASE_URL`. Missing environment variables fail at request time with an explicit message, not during the build.
+
 ## Scripts
 
 | Command | Description |
