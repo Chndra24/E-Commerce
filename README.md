@@ -6,7 +6,7 @@ This is a portfolio project. The product contract lives in [`docs/PRD.md`](docs/
 
 ## Status
 
-**M1 — Foundation & tooling (in progress).** The shell, design system, formatting utilities, and CI exist. Catalog, checkout, seed data, and analytics land in later milestones; `/admin` is intentionally closed in production builds until the auth layer ships.
+**M1 — Foundation & tooling (in progress).** Fase A (shell, design system, formatting utilities, CI) and Fase B (Prisma schema, Auth.js credentials, server-side admin guard) are done. Catalog, checkout, seed data, and analytics land in later milestones; `/admin` now requires an `ADMIN` session and returns `403` for customers.
 
 ## Stack
 
@@ -14,9 +14,9 @@ This is a portfolio project. The product contract lives in [`docs/PRD.md`](docs/
 | --- | --- |
 | Framework | Next.js 16 (App Router) + TypeScript |
 | Styling | Tailwind CSS 4 + shadcn/ui |
-| Database | PostgreSQL (Supabase) |
-| ORM | Prisma (added in M1 Fase B) |
-| Auth | Auth.js v5, credentials + JWT role (added in M1 Fase B) |
+| Database | PostgreSQL 15+ (Supabase) |
+| ORM | Prisma 7 (`prisma-client` generator + `@prisma/adapter-pg`) |
+| Auth | Auth.js v5 (credentials, JWT session with role) |
 | Charts | Recharts + custom CSS Grid heatmap (M5) |
 | Tests | Vitest |
 
@@ -29,7 +29,9 @@ This is a portfolio project. The product contract lives in [`docs/PRD.md`](docs/
 
 ```bash
 npm install
-cp .env.example .env   # then fill in the values
+cp .env.example .env       # then fill in the values
+npx prisma migrate deploy  # apply the schema
+npm run seed:auth          # create the demo accounts
 npm run dev
 ```
 
@@ -48,6 +50,8 @@ The app runs at http://localhost:3000.
 
 Supabase's direct host (`db.<ref>.supabase.co`) resolves to IPv6 only. Use the pooler URLs from **Dashboard → Connect → ORM → Prisma** so the app works on IPv4-only networks.
 
+Prisma 7 reads its datasource URL from [`prisma.config.ts`](prisma.config.ts), not from `schema.prisma`. Migrations use `DIRECT_URL`; the runtime client (`src/lib/db.ts`) uses `DATABASE_URL` through the `pg` driver adapter.
+
 ## Scripts
 
 | Command | Description |
@@ -59,23 +63,40 @@ Supabase's direct host (`db.<ref>.supabase.co`) resolves to IPv6 only. Use the p
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest (single run) |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run db:deploy` | Apply committed migrations (`prisma migrate deploy`) |
+| `npm run db:migrate` | Create a migration in development (`prisma migrate dev`) |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run seed:auth` | Seed the demo accounts (M1) |
 
-Database and seed scripts (`npm run seed`, `prisma migrate`) are added in M1 Fase B and M3.
+`npm run seed` — the full 18-month dashboard dataset — arrives in M3.
 
 ## Project structure
 
 ```
+prisma/
+  schema.prisma      data model (PRD §11)
+  migrations/        committed SQL migrations
+scripts/
+  seed-auth.ts       demo accounts (M1); full seed lands in M3
 src/
   app/
     (shop)/          storefront routes
     (admin)/admin/   admin panel routes
+    api/auth/        Auth.js route handler
   components/
     ui/              shadcn/ui primitives
   lib/
+    actions/         server actions (auth)
+    auth-guards.ts   requireUser / requireAdmin (server-side authorization)
+    db.ts            Prisma client singleton (driver adapter)
     format.ts        currency / percent / WIB date formatting
     segments.ts      the 11 RFM segments, labels, and colors
+    validators/      zod schemas
+  proxy.ts           cookie-presence redirect for /admin (UX only)
 docs/PRD.md          product requirements (binding contract)
 ```
+
+Authorization is enforced in server components, server actions, and route handlers via `requireAdmin()`. `src/proxy.ts` only redirects anonymous visitors early; it is not the security boundary.
 
 ## Conventions
 
@@ -86,9 +107,10 @@ docs/PRD.md          product requirements (binding contract)
 
 ## Demo accounts
 
-Created by the seed script (M3):
+Created by `npm run seed:auth`. Password for all three is `Segmenta123!`.
 
-- `admin@segmenta.test`
-- `customer@segmenta.test`
+- `admin@segmenta.test` — ADMIN
+- `customer@segmenta.test` — CUSTOMER
+- `budi@segmenta.test` — CUSTOMER
 
-Passwords are documented once the seed exists. All customer data is synthetic.
+All customer data is synthetic.

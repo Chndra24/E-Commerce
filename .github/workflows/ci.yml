@@ -46,10 +46,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci # postinstall runs `prisma generate`
 
-      # Prisma steps (generate + migrate deploy) are added in M1 Fase B,
-      # once prisma/schema.prisma and prisma/migrations exist.
+      # Proves the committed migrations apply cleanly to an empty database.
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Typecheck
         run: npm run typecheck

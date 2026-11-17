@@ -1,29 +1,40 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { RegisterForm } from "@/components/auth/register-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSessionUser } from "@/lib/auth-guards";
 
 export const metadata = {
   title: "Daftar",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const user = await getSessionUser();
+
+  if (user) {
+    redirect("/");
+  }
+
   return (
     <div className="mx-auto flex max-w-md flex-col px-4 py-16 sm:px-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Buat akun</CardTitle>
           <CardDescription>
-            Registrasi aktif pada M1 Fase B, bersamaan dengan modul autentikasi.
+            Akun baru otomatis terdaftar sebagai pelanggan dan langsung bisa berbelanja.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className="space-y-6">
+          <RegisterForm />
+
           <p className="text-sm text-muted-foreground">
-            Setelah aktif, akun baru otomatis masuk sebagai pelanggan dan dapat langsung berbelanja.
+            Sudah punya akun?{" "}
+            <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Masuk
+            </Link>
           </p>
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/login">Sudah punya akun? Masuk</Link>
-          </Button>
         </CardContent>
       </Card>
     </div>

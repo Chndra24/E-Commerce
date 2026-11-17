@@ -2,10 +2,15 @@ import { Boxes } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/user-menu";
+import { auth } from "@/auth";
 
 const NAV_LINKS = [{ href: "/products", label: "Katalog" }];
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
@@ -29,12 +34,21 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/login">Masuk</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/register">Daftar</Link>
-          </Button>
+          {user ? (
+            <UserMenu
+              name={user.name ?? user.email ?? "Akun"}
+              isAdmin={user.role === "ADMIN"}
+            />
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">Masuk</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/register">Daftar</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
